@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An academic SMS spam classification system using TF-IDF and Multinomial Naive Bayes.">
+    <title>SMS Spam Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#classifier">Skip to classifier</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top" aria-label="SMS Spam Detection System home">
+          <span class="brand-mark" aria-hidden="true">SMS</span>
+          <span class="brand-copy"><strong>SMS Spam Detection System</strong><small>Machine Learning-Based Text Classification</small></span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="#classifier">Classifier</a>
+          <a href="#model">Model</a>
+          <a href="#documentation">Documentation</a>
+        </nav>
+        <div class="health" id="health-status" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="health-label">Checking system</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero page-width" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Academic MLOps project</p>
+          <h1 id="hero-title">Understand the message.<br><span>Not just the label.</span></h1>
+          <p class="hero-description">A text-classification system that examines an SMS and estimates whether it resembles legitimate correspondence or unwanted spam.</p>
+          <a class="text-link" href="#how-it-works">Explore how the system works <span aria-hidden="true">↓</span></a>
+        </div>
+        <aside class="hero-note">
+          <span class="note-kicker">Responsible use</span>
+          <p>A model prediction is a statistical estimate. It does not prove that a message is safe, fraudulent, or trustworthy.</p>
+        </aside>
+      </section>
+
+      <section class="page-width classifier-layout" id="classifier" aria-labelledby="classifier-title">
+        <div class="classifier-card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Message analysis</p>
+              <h2 id="classifier-title">Classify an SMS</h2>
+            </div>
+            <span class="model-chip">TF-IDF · Multinomial NB</span>
+          </div>
+          <label class="field-label" for="sample-select">Try a sample (fills the message; does not submit)</label>
+          <select id="sample-select" name="sample">
+            <option value="">Choose a sample message…</option>
+            <optgroup label="HAM examples">
+              <option value="Hey, are we still meeting for lunch at one?">Informal meeting</option>
+              <option value="Your appointment is confirmed for tomorrow at 10 am.">Appointment reminder</option>
+              <option value="Thanks for your help yesterday, speak soon.">Personal message</option>
+            </optgroup>
+            <optgroup label="SPAM examples">
+              <option value="Congratulations! You have won a free prize. Call now to claim.">Prize claim</option>
+              <option value="URGENT! Claim your free cash reward now by texting WIN.">Cash reward</option>
+              <option value="You have been selected for a special offer. Reply STOP to opt out.">Promotional offer</option>
+            </optgroup>
+          </select>
+          <form id="prediction-form" novalidate>
+            <div class="field-topline">
+              <label class="field-label" for="message">Message text</label>
+              <span id="character-count" class="character-count">0 / 10,000</span>
+            </div>
+            <textarea id="message" name="message" rows="7" maxlength="10000" required
+                      aria-describedby="message-help form-error"
+                      placeholder="Paste or type the SMS you want to analyze…">{{ message }}</textarea>
+            <p id="message-help" class="field-hint">The message is sent to this application's model endpoint for inference. Do not use this classifier as a substitute for verifying a sender through a trusted channel.</p>
+            <p id="form-error" class="form-error" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="button button-primary" id="classify-button" type="submit" {% if not model_available %}disabled{% endif %}>
+                <span class="button-text">Analyze message</span><span class="button-spinner" aria-hidden="true"></span>
+              </button>
+              <button class="button button-secondary" id="clear-button" type="reset">Clear</button>
+            </div>
+          </form>
+          <p class="model-unavailable" {% if model_available %}hidden{% endif %} role="status">The model is unavailable. Train it with <code>python train_model.py</code>, then restart the app.</p>
+        </div>
+
+        <aside class="result-column" aria-label="Prediction and classification information">
+          <section class="result-card panel" id="result-card" tabindex="-1" aria-live="polite" aria-atomic="true">
+            <div class="result-placeholder" id="result-placeholder">
+              <span class="result-icon" aria-hidden="true">↗</span>
+              <p class="eyebrow">Your analysis</p>
+              <h2>Result appears here</h2>
+              <p>Submit a message to see the model's class estimate and probability distribution.</p>
+            </div>
+            <div class="result-content" id="result-content" hidden>
+              <p class="eyebrow">Predicted class</p>
+              <div class="result-class-row">
+                <h2 id="result-label"></h2>
+                <span id="prediction-time" class="prediction-time"></span>
+              </div>
+              <p id="result-meaning" class="result-meaning"></p>
+              <div class="probabilities" id="probability-panel" hidden>
+                <div class="probability-heading"><span>Estimated class probabilities</span><span class="not-calibrated">Not calibrated</span></div>
+                <div class="probability-row">
+                  <div class="probability-label"><span>HAM</span><span id="ham-value">—</span></div>
+                  <div class="probability-track" role="progressbar" id="ham-bar" aria-label="Estimated HAM probability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+                </div>
+                <div class="probability-row">
+                  <div class="probability-label"><span>SPAM</span><span id="spam-value">—</span></div>
+                  <div class="probability-track spam-track" role="progressbar" id="spam-bar" aria-label="Estimated SPAM probability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+                </div>
+              </div>
+              <p class="result-caution" id="confidence-note"></p>
+              <p class="result-caution strong-caution">A HAM result does not confirm that a message is safe. Verify links, requests, and senders independently.</p>
+            </div>
+          </section>
+          <section class="class-key panel">
+            <h2>Class definitions</h2>
+            <p><strong>HAM</strong><span> A legitimate, non-spam message.</span></p>
+            <p><strong>SPAM</strong><span> An unwanted or spam-like message.</span></p>
+          </section>
+        </aside>
+      </section>
+
+      <section class="page-width content-section" id="how-it-works">
+        <div class="section-heading">
+          <div><p class="eyebrow">Methodology</p><h2>How the system works</h2></div>
+          <p class="section-intro">A single saved pipeline keeps training and inference preprocessing consistent.</p>
+        </div>
+        <div class="steps-grid">
+          <article class="step-card"><span class="step-number">01</span><h3>Validate</h3><p>Read the supplied SMS Spam Collection and check its labels and text fields.</p></article>
+          <article class="step-card"><span class="step-number">02</span><h3>Represent</h3><p>TF-IDF converts message text into weighted word and phrase features.</p></article>
+          <article class="step-card"><span class="step-number">03</span><h3>Classify</h3><p>Multinomial Naive Bayes estimates HAM and SPAM classes from learned features.</p></article>
+          <article class="step-card"><span class="step-number">04</span><h3>Serve</h3><p>Flask exposes the fitted pipeline through this interface and a JSON endpoint.</p></article>
+        </div>
+      </section>
+
+      <section class="page-width content-section" id="model">
+        <div class="section-heading">
+          <div><p class="eyebrow">Verified project information</p><h2>Dataset &amp; evaluation</h2></div>
+          <a class="text-link" href="{{ url_for('metrics') }}">View metrics API <span aria-hidden="true">↗</span></a>
+        </div>
+        {% if evaluation_report %}
+        {% set report = evaluation_report %}
+        {% set metrics = report.metrics %}
+        <div class="model-grid">
+          <article class="panel info-panel">
+            <h3>Dataset</h3>
+            <p class="info-lead">SMS Spam Collection · original supplied archive</p>
+            <dl class="detail-list">
+              <div><dt>Records</dt><dd>{{ report.dataset.records }}</dd></div>
+              <div><dt>HAM / SPAM</dt><dd>{{ report.dataset.class_distribution.ham }} / {{ report.dataset.class_distribution.spam }}</dd></div>
+              <div><dt>Unique messages</dt><dd>{{ report.dataset.unique_messages }}</dd></div>
+              <div><dt>Duplicate rows retained</dt><dd>{{ report.dataset.exact_duplicate_rows }}</dd></div>
+              <div><dt>Empty fields</dt><dd>{{ report.dataset.missing_cells }}</dd></div>
+            </dl>
+          </article>
+          <article class="panel info-panel">
+            <h3>Held-out evaluation</h3>
+            <p class="info-lead">Stratified, message-grouped split · {{ report.split.testing_records }} test records</p>
+            <div class="metric-grid">
+              <div class="metric"><span>Accuracy</span><strong>{{ "%.1f"|format(metrics.accuracy * 100) }}%</strong></div>
+              <div class="metric"><span>SPAM precision</span><strong>{{ "%.1f"|format(metrics.spam_precision * 100) }}%</strong></div>
+              <div class="metric"><span>SPAM recall</span><strong>{{ "%.1f"|format(metrics.spam_recall * 100) }}%</strong></div>
+              <div class="metric"><span>SPAM F1</span><strong>{{ "%.1f"|format(metrics.spam_f1_score * 100) }}%</strong></div>
+            </div>
+            <p class="fine-print">Generated {{ report.generated_at_utc }} · scikit-learn {{ report.model.scikit_learn_version }}</p>
+          </article>
+        </div>
+        <div class="model-grid evaluation-tables">
+          <article class="panel info-panel">
+            <h3>Class-wise test metrics</h3>
+            <div class="table-scroll">
+              <table>
+                <caption>Computed on the held-out test set</caption>
+                <thead><tr><th scope="col">Class</th><th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">F1</th><th scope="col">Support</th></tr></thead>
+                <tbody>
+                  {% for label in ("ham", "spam") %}
+                  {% set class_metrics = metrics.classification_report[label] %}
+                  <tr><th scope="row">{{ label|upper }}</th><td>{{ "%.4f"|format(class_metrics.precision) }}</td><td>{{ "%.4f"|format(class_metrics.recall) }}</td><td>{{ "%.4f"|format(class_metrics["f1-score"]) }}</td><td>{{ class_metrics.support|int }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </article>
+          <article class="panel info-panel">
+            <h3>Confusion matrix</h3>
+            <div class="table-scroll">
+              <table class="confusion-table">
+                <caption>Rows: actual class · columns: predicted class</caption>
+                <thead><tr><th scope="col">Actual \ Predicted</th><th scope="col">HAM</th><th scope="col">SPAM</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">HAM</th><td>{{ metrics.confusion_matrix[0][0] }}</td><td>{{ metrics.confusion_matrix[0][1] }}</td></tr>
+                  <tr><th scope="row">SPAM</th><td>{{ metrics.confusion_matrix[1][0] }}</td><td>{{ metrics.confusion_matrix[1][1] }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+        <p class="evaluation-caveat">Accuracy alone can be misleading because the dataset has more HAM than SPAM examples. Class-specific precision, recall, and the confusion matrix are shown above. These results describe one held-out split; they do not guarantee future performance. <a href="{{ url_for('metrics') }}">Open the evaluation JSON</a>.</p>
+        {% else %}
+        <p class="report-unavailable" role="status">Verified evaluation metrics are unavailable. Retrain with <code>python train_model.py</code> to create a report that matches the current model.</p>
+        {% endif %}
+      </section>
+
+      <section class="page-width content-section api-section" id="documentation">
+        <div class="section-heading">
+          <div><p class="eyebrow">Developer reference</p><h2>API &amp; responsible use</h2></div>
+          <a class="text-link" href="/health">Health endpoint <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="api-grid">
+          <article class="panel info-panel">
+            <h3>Prediction endpoint</h3>
+            <p><span class="http-method">POST</span> <code>/prediction</code> · JSON body</p>
+            <pre><code>{"message": "Your SMS text here"}</code></pre>
+            <p class="field-hint">Success returns a label, estimated HAM/SPAM class probabilities when supported, and measured prediction time. Empty or invalid messages are rejected.</p>
+            <p><a href="/api/model-info">Model information JSON</a> · <a href="/api/metrics">Evaluation metrics JSON</a></p>
+          </article>
+          <article class="panel info-panel limitations">
+            <h3>Limitations &amp; responsible use</h3>
+            <ul>
+              <li>The corpus is English-language and reflects its collection period.</li>
+              <li>Class probabilities are uncalibrated estimates, not certainty.</li>
+              <li>False positives and missed spam are possible; never rely on the label alone.</li>
+              <li>Do not submit sensitive messages or personal information.</li>
+            </ul>
+          </article>
+          <article class="panel info-panel">
+            <h3>Technology stack</h3>
+            <p class="info-lead">A lightweight, reproducible Python MLOps application.</p>
+            <ul class="stack-list">
+              <li>Python 3.10 / 3.11 · pandas · NumPy</li>
+              <li>scikit-learn Pipeline · TF-IDF · Multinomial Naive Bayes</li>
+              <li>Flask · Joblib · pytest</li>
+              <li>Docker · Gunicorn</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="page-width footer-inner"><span>SMS Spam Detection System</span><span>Academic machine-learning demonstration · No safety guarantee</span></div>
+    </footer>
+  </body>
+</html>

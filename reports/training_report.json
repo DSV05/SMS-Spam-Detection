@@ -1,0 +1,104 @@
+{
+  "dataset": {
+    "class_distribution": {
+      "ham": 4827,
+      "spam": 747
+    },
+    "columns": [
+      "label",
+      "message"
+    ],
+    "delimiter": "tab",
+    "duplicate_handling": "Retained unchanged; no rows were removed.",
+    "encoding": "UTF-8",
+    "exact_duplicate_rows": 403,
+    "header": false,
+    "label_handling": "Original ham/spam labels retained without remapping.",
+    "messages_with_conflicting_labels": 0,
+    "missing_cells": 0,
+    "records": 5574,
+    "source_file": "SMSSpamCollection",
+    "source_sha256": "7d039a24a6083ed9ef0f806ebad56bbb976e3aeb8de05669173bfdc4996c239d",
+    "unique_messages": 5171,
+    "unknown_labels": []
+  },
+  "generated_at_utc": "2026-10-15T04:38:29+00:00",
+  "metrics": {
+    "accuracy": 0.9442446043165468,
+    "classification_report": {
+      "accuracy": 0.9442446043165468,
+      "ham": {
+        "f1-score": 0.96875,
+        "precision": 0.9393939393939394,
+        "recall": 1.0,
+        "support": 961.0
+      },
+      "macro avg": {
+        "f1-score": 0.8552083333333333,
+        "precision": 0.9696969696969697,
+        "recall": 0.794701986754967,
+        "support": 1112.0
+      },
+      "spam": {
+        "f1-score": 0.7416666666666667,
+        "precision": 1.0,
+        "recall": 0.5894039735099338,
+        "support": 151.0
+      },
+      "weighted avg": {
+        "f1-score": 0.9379140437649881,
+        "precision": 0.9476237192064532,
+        "recall": 0.9442446043165468,
+        "support": 1112.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        961,
+        0
+      ],
+      [
+        62,
+        89
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "ham",
+      "spam"
+    ],
+    "spam_f1_score": 0.7416666666666667,
+    "spam_precision": 1.0,
+    "spam_recall": 0.5894039735099338
+  },
+  "model": {
+    "artifact_sha256": "71ac9e6e9463a7369e55652bbf278617a4351a3e7b3eb686b3a1ada27d81a328",
+    "pipeline": [
+      "TfidfVectorizer(ngram_range=(1, 2))",
+      "MultinomialNB"
+    ],
+    "random_state": 42,
+    "scikit_learn_version": "1.7.2",
+    "vectorizer_fit_only_on_training_data": true
+  },
+  "report_schema_version": 1,
+  "split": {
+    "actual_test_fraction": 0.19949766774309294,
+    "grouped_by_message": true,
+    "random_state": 42,
+    "stratified": true,
+    "target_test_size": 0.2,
+    "testing_class_distribution": {
+      "ham": 961,
+      "spam": 151
+    },
+    "testing_records": 1112,
+    "testing_unique_messages": 1035,
+    "training_class_distribution": {
+      "ham": 3866,
+      "spam": 596
+    },
+    "training_records": 4462,
+    "training_unique_messages": 4136,
+    "unique_message_overlap": 0
+  }
+}

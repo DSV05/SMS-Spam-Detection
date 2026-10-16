@@ -1,0 +1,14 @@
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.env
+*.pem
+data
+docs
+reports/*.md
+tests
+sms+spam+collection.zip
+2CEAI702_PRACTICAL_FILE__FORMAT.docx
