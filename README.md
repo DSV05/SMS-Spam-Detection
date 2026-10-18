@@ -595,31 +595,5 @@ limitations are documented in the generated evaluation report. AWS EC2 and GCP
 remain separate manual exercises; their setup instructions are not deployment
 evidence.
 
-## Academic practical documentation
+- AWS deployment URL : http://16.4.38.19:5000/
 
-- [Project audit](./docs/project-audit.md) — inspected baseline and scope.
-- [System architecture](./docs/system-architecture.md) — data-to-serving flow.
-- [Model evaluation](./docs/model-evaluation.md) — generated from the current
-  training run.
-- [Practical evidence checklist](./docs/practical-evidence.md) — required
-  screenshots; cloud screenshots remain pending until captured.
-
-## Limitations and troubleshooting
-
-- The corpus is imbalanced toward ham and consists of English SMS messages;
-  performance may differ on modern, multilingual, or domain-specific data.
-- Duplicate examples are retained to comply with preserving the supplied data.
-- The single held-out split can vary in representativeness. No probability
-  calibration is performed.
-- Model probabilities are estimates, not guarantees; false positives and false
-  negatives are possible.
-- `FileNotFoundError` when training means the extracted
-  `data/raw/SMSSpamCollection` file is missing. Do not substitute a generated or
-  downloaded dataset.
-- A 503 from `/health` or `/prediction` means the model artifact is absent or
-  could not be loaded. Run `python train_model.py` from the project root.
-- If Docker CLI works but `docker info` reports a named-pipe/daemon connection
-  error on Windows, start Docker Desktop and wait for the Linux engine to become
-  ready before building.
-- If a remote page times out, check the cloud firewall/security group, VM
-  external/public IP, and container port mapping; inspect container logs.
